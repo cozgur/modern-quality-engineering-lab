@@ -1,0 +1,37 @@
+name: ai-eval
+
+# Promptfoo evaluation of the fictional support assistant.
+# Runs on demand only: it needs a model API key and spends tokens.
+# Add OPENAI_API_KEY as a repository secret to enable it.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  promptfoo:
+    name: Promptfoo evaluation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Skip when no API key is configured
+        if: env.OPENAI_API_KEY == ''
+        run: echo "OPENAI_API_KEY secret not set; skipping evaluation." >> "$GITHUB_STEP_SUMMARY"
+      - name: Run evaluation
+        if: env.OPENAI_API_KEY != ''
+        run: npx --yes promptfoo@0.123.0 eval -c promptfoo/promptfooconfig.yaml --output promptfoo-results.json
+      - name: Upload results
+        if: always() && env.OPENAI_API_KEY != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: promptfoo-results
+          path: promptfoo-results.json
+          if-no-files-found: ignore

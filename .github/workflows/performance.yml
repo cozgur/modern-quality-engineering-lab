@@ -1,0 +1,42 @@
+name: performance
+
+# Performance is a scheduled / on-demand gate, not a per-commit one:
+# results are only meaningful on stable infrastructure and cost real minutes.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  k6-api-load:
+    name: k6 API load test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Start the sample service
+        run: |
+          npm run dev > server.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:3000/api/health && exit 0
+            sleep 1
+          done
+          echo "Service did not become healthy"; cat server.log; exit 1
+      - uses: grafana/setup-k6-action@v1
+      - name: Run protocol-level load test
+        run: k6 run tests/performance/api-load.js
+      - name: Upload k6 summary
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: k6-summary
+          path: k6-summary.json
+          if-no-files-found: ignore

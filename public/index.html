@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modern Quality Engineering Lab</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 760px; margin: 4rem auto; padding: 0 1rem; line-height: 1.5; color: #1f2933; }
+      button { padding: .7rem 1rem; font-size: 1rem; cursor: pointer; }
+      button[disabled] { cursor: progress; opacity: .7; }
+      #status { margin-top: 1rem; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Modern Quality Engineering Lab</h1>
+      <p>A tiny test target used to demonstrate several modern quality-engineering layers.</p>
+      <button id="checkout" type="button">Run demo checkout</button>
+      <p id="status" role="status" aria-live="polite">No checkout yet.</p>
+    </main>
+    <script>
+      const button = document.getElementById('checkout');
+      const status = document.getElementById('status');
+
+      button.addEventListener('click', async () => {
+        button.disabled = true;
+        status.textContent = 'Processing…';
+        try {
+          const response = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ productId: 'quality-lab', quantity: 1 }),
+          });
+          const data = await response.json();
+          status.textContent =
+            response.ok && data.status === 'confirmed' ? `Order confirmed: ${data.orderId}` : 'Checkout failed';
+        } catch {
+          status.textContent = 'Checkout failed';
+        } finally {
+          button.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

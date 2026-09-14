@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -118,10 +119,10 @@ jobs:
           path: reports/mutation/
           if-no-files-found: ignore
 
-  publish-report:
-    name: Publish Playwright report to Pages
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [e2e]
+  publish-reports:
+    name: Publish reports to Pages
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: [e2e, mutation]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     concurrency:
@@ -131,10 +132,23 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           name: playwright-report
-          path: site/
+          path: site/report/
+      - uses: actions/download-artifact@v8
+        with:
+          name: mutation-report
+          path: site/mutation/
+      - name: Assemble the landing page
+        env:
+          CUSTOM_DOMAIN: ${{ vars.PAGES_CUSTOM_DOMAIN }}
+        run: |
+          sed -e "s/{{sha}}/${GITHUB_SHA:0:7}/" \
+              -e "s/{{date}}/$(date -u +%Y-%m-%d)/" \
+              -e "s/{{run}}/#${GITHUB_RUN_NUMBER}/" pages/index.html > site/index.html
+          if [ -n "$CUSTOM_DOMAIN" ]; then echo "$CUSTOM_DOMAIN" > site/CNAME; fi
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

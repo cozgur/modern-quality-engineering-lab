@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modern Quality Engineering Lab · Reports</title>
+    <meta name="description" content="Latest Playwright and Stryker mutation reports from the Modern Quality Engineering Lab CI pipeline." />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23F5F3EC'/%3E%3Crect x='1.5' y='1.5' width='29' height='29' fill='none' stroke='%2316150F' stroke-width='3'/%3E%3Cpath d='M9 17l5 5 10-11' fill='none' stroke='%2316150F' stroke-width='3.5' stroke-linecap='square'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      :root { --paper: #f5f3ec; --ink: #16150f; --rule: #cfcab9; --muted: #66625a; --red: #b42318; --green: #1b6b3a; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/24px 'Schibsted Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+      a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+      a:hover { color: var(--red); }
+      *:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; height: 48px; padding: 0 32px; border-bottom: 1px solid var(--ink); font: 400 12px/16px 'JetBrains Mono', monospace; color: var(--muted); }
+      .topbar strong { font-weight: 600; font-size: 14px; color: var(--ink); }
+      main { max-width: 880px; margin: 0 auto; padding: 56px 32px 80px; display: flex; flex-direction: column; gap: 48px; }
+      .kicker { font: 500 11px/16px 'JetBrains Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 16px; }
+      h1 { margin: 0; font: 600 34px/1.15 'Schibsted Grotesk', sans-serif; letter-spacing: -0.015em; max-width: 24ch; }
+      .lede { margin: 20px 0 0; max-width: 62ch; }
+      .label { font: 500 11px/16px 'JetBrains Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding-bottom: 8px; border-bottom: 1px solid var(--ink); }
+      .rows { list-style: none; margin: 0; padding: 0; }
+      .rows li { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 24px; align-items: baseline; padding: 20px 0; border-bottom: 1px solid var(--rule); }
+      .rows .idx { font: 500 13px/24px 'JetBrains Mono', monospace; color: var(--muted); }
+      .rows h2 { margin: 0; font: 600 20px/28px 'Schibsted Grotesk', sans-serif; }
+      .rows p { margin: 6px 0 0; max-width: 60ch; }
+      .rows .go { font: 500 13px/20px 'JetBrains Mono', monospace; white-space: nowrap; }
+      .stamp { display: inline-block; font: 600 12px/20px 'JetBrains Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; border: 2px solid var(--ink); padding: 2px 10px; transform: rotate(-2deg); }
+      .meta { font: 400 12px/18px 'JetBrains Mono', monospace; color: var(--muted); }
+      footer { max-width: 880px; margin: 0 auto; padding: 0 32px 40px; font: 400 12px/16px 'JetBrains Mono', monospace; color: var(--muted); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+      @media (max-width: 720px) { .topbar { padding: 0 20px; } main { padding: 36px 20px 56px; } .rows li { grid-template-columns: 1fr; gap: 6px; } footer { padding: 0 20px 32px; } }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <span><strong>Modern Quality Engineering Lab</strong> · reports</span>
+      <span><a href="https://github.com/cozgur/modern-quality-engineering-lab">Repository ↗</a> · <a href="https://ozgurcetintas.dev/">ozgurcetintas.dev ↗</a></span>
+    </header>
+    <main>
+      <section>
+        <p class="kicker">Published by CI · commit {{sha}} · {{date}}</p>
+        <h1>The evidence, not the claim.</h1>
+        <p class="lede">
+          Every push to <code>main</code> runs the lab's six quality gates and publishes the two reports below. The
+          repository README explains which layer each risk is tested at; these pages show what the last run
+          actually saw.
+        </p>
+        <p style="margin-top:20px"><span class="stamp">run {{run}}</span></p>
+      </section>
+      <section>
+        <div class="label">Reports</div>
+        <ol class="rows">
+          <li>
+            <span class="idx">01</span>
+            <div>
+              <h2>Playwright report</h2>
+              <p>Browser E2E and axe-core accessibility results for the checkout journey, its failure paths and the health endpoint, with traces on retry.</p>
+            </div>
+            <a class="go" href="report/">Open ↗</a>
+          </li>
+          <li>
+            <span class="idx">02</span>
+            <div>
+              <h2>Mutation report</h2>
+              <p>Stryker's verdict on whether the unit and API suites notice injected bugs. Killed, survived and timed-out mutants per file, with the surviving ones highlighted in source.</p>
+            </div>
+            <a class="go" href="mutation/">Open ↗</a>
+          </li>
+        </ol>
+      </section>
+      <section>
+        <div class="label">Also in the repository</div>
+        <p class="meta" style="margin-top:12px">
+          <a href="https://github.com/cozgur/modern-quality-engineering-lab/blob/main/docs/test-strategy.md">Test strategy</a> ·
+          <a href="https://github.com/cozgur/modern-quality-engineering-lab/tree/main/docs/adr">Decision records</a> ·
+          <a href="https://github.com/cozgur/modern-quality-engineering-lab/actions">CI runs</a> ·
+          <a href="https://studio.ozgurcetintas.dev/">TestPlan Studio, which uses this lab as its demo target</a>
+        </p>
+      </section>
+    </main>
+    <footer><span>© 2026 Özgür Çetintaş</span><span>Static · GitHub Pages</span></footer>
+  </body>
+</html>

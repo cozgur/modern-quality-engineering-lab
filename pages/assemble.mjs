@@ -21,7 +21,8 @@ function performance() {
 
 function aiEvaluation() {
   const file = `${outDir}/ai-eval/promptfoo-results.json`;
-  if (!existsSync(file)) return 'Not run yet: add an ANTHROPIC_API_KEY repository secret and dispatch the ai-eval workflow.';
+  if (!existsSync(file))
+    return 'Not run yet: add an ANTHROPIC_API_KEY repository secret and dispatch the ai-eval workflow.';
   const data = JSON.parse(readFileSync(file, 'utf8'));
   const stats = data.results?.stats ?? data.stats ?? {};
   const when = env.AI_RUN ? ` · run #${env.AI_RUN} on ${env.AI_DATE}` : '';

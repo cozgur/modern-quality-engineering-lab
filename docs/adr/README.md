@@ -10,3 +10,4 @@ Format: context, decision, consequences. New decisions get the next number.
 | [0003](0003-pacts-generated-not-committed.md) | Pact files are generated in CI rather than committed |
 | [0004](0004-agents-propose-humans-approve.md) | AI agents propose tests and repairs; humans approve intent |
 | [0005](0005-no-visual-regression-baselines.md) | No screenshot baselines in this repository |
+| [0006](0006-mutation-testing-with-the-command-runner.md) | Mutation testing runs through Stryker's command runner |

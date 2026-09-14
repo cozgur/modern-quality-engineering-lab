@@ -25,13 +25,14 @@ all wired into a parallel GitHub Actions pipeline.
 |---|---|
 | 1 minute | The layer map below and the green CI badge above. |
 | 5 minutes | [`tests/e2e/checkout.spec.ts`](tests/e2e/checkout.spec.ts) (UI claim verified through the API, failure paths via network mocking), [`tests/api/app.test.ts`](tests/api/app.test.ts) (HTTP error handling), [`tests/integration/postgres.test.ts`](tests/integration/postgres.test.ts) (database-enforced invariants). |
-| 15 minutes | [`docs/test-strategy.md`](docs/test-strategy.md) for the placement rules, then the [decision records](docs/adr/README.md) for the trade-offs. |
+| 15 minutes | [`docs/test-strategy.md`](docs/test-strategy.md) for the placement rules, then the [decision records](docs/adr/README.md) for the trade-offs, especially [ADR-0006](docs/adr/0006-mutation-testing-with-the-command-runner.md) on what mutation testing found that coverage hid. |
 
 ## What this demonstrates
 
 | Layer | Technology | What it proves here |
 |---|---|---|
 | Unit | Vitest | Table-driven boundary tests for checkout validation |
+| Mutation | Stryker | Whether the suites would notice a bug: 96% mutation score, CI breaks under 80% |
 | API (in-process) | Vitest + Supertest | Routing, JSON parsing, 400 vs 500 handling, dependency injection of a failing repository |
 | Contract | Pact v4 | Consumer-driven contract + provider verification against the real Express app |
 | Integration | Testcontainers + PostgreSQL 16 | Real `CHECK` and primary-key constraints, full HTTP-to-database path |
@@ -110,12 +111,27 @@ Run it with traces using `npm run dev:otel`.
 npm run test:unit
 npm run test:api
 npm run test:coverage    # enforces 90% line / 85% branch thresholds on src/
+npm run test:mutation    # Stryker: do the assertions notice injected bugs?
 ```
 
 What to notice:
 
 - [`src/checkout.ts`](src/checkout.ts) is a pure function, so every boundary (`0`, `1`, `100`, `101`, `1.5`, `"2"`) is one table row in [`tests/unit/checkout.test.ts`](tests/unit/checkout.test.ts).
 - [`tests/api/app.test.ts`](tests/api/app.test.ts) proves malformed JSON returns `400`, not `500`, and that a throwing repository surfaces as a JSON `500` rather than a crash. Neither of those belongs in a browser test.
+
+### Mutation testing (Stryker)
+
+```bash
+npm run test:mutation    # ~40 s locally; report in reports/mutation/index.html
+```
+
+Coverage on `src/` was already 100%, so the interesting number is the **mutation score**: how many
+injected faults the unit and API suites actually catch. The first run scored 88% and its survivors
+pointed at four real gaps that coverage had hidden (the static page was never requested, the default
+order-id generator was never exercised, non-`Error` throws were untested, the out-of-range message was
+never asserted). Tests were added for each; the score is now 96% and CI fails under 80%.
+Stryker's in-process Vitest runner does not switch mutants on Vitest 5 yet, so the command runner
+re-runs the fast suites per mutant ([ADR-0006](docs/adr/0006-mutation-testing-with-the-command-runner.md)).
 
 ### Contract tests (Pact)
 
@@ -197,15 +213,17 @@ The workflow and its guardrails are in [`docs/agentic-testing.md`](docs/agentic-
 
 ## CI pipeline
 
-Four independent jobs run in parallel on every push and pull request
-([`ci.yml`](.github/workflows/ci.yml)):
+Five independent jobs run in parallel on every push and pull request
+([`ci.yml`](.github/workflows/ci.yml)); on `main` the Playwright report is then published to
+[GitHub Pages](https://cozgur.github.io/modern-quality-engineering-lab/):
 
 | Job | Runs | Artifact |
 |---|---|---|
 | Lint, types, unit & API tests | ESLint, Prettier, `tsc`, Vitest with coverage thresholds | `coverage/` |
+| Mutation testing | Stryker over `src/` with an 80% break threshold | mutation HTML report |
 | Pact consumer + provider | consumer contract, then provider verification | generated pact |
 | Integration | Testcontainers PostgreSQL | |
-| Browser E2E + accessibility | Playwright with `github` annotations, trace on first retry | Playwright HTML report |
+| Browser E2E + accessibility | Playwright with `github` annotations, trace on first retry | Playwright HTML report, published to Pages on `main` |
 
 Separate workflows: [`performance`](.github/workflows/performance.yml) (weekly + manual, k6) and
 [`ai-eval`](.github/workflows/ai-eval.yml) (manual, Promptfoo). Dependencies are pinned exactly and
@@ -220,6 +238,7 @@ Separate workflows: [`performance`](.github/workflows/performance.yml) (weekly +
 | [0003](docs/adr/0003-pacts-generated-not-committed.md) | Pacts are generated in CI, not committed |
 | [0004](docs/adr/0004-agents-propose-humans-approve.md) | Agents propose, humans approve intent |
 | [0005](docs/adr/0005-no-visual-regression-baselines.md) | No screenshot baselines |
+| [0006](docs/adr/0006-mutation-testing-with-the-command-runner.md) | Mutation testing through Stryker's command runner |
 
 ## Interview talking points
 
@@ -238,8 +257,8 @@ Separate workflows: [`performance`](.github/workflows/performance.yml) (weekly +
 
 ## Roadmap
 
-- [ ] Publish the Playwright HTML report to GitHub Pages on `main`.
-- [ ] Add a mutation-testing run (Stryker) to measure the unit suite, not just cover it.
+- [x] Publish the Playwright HTML report to GitHub Pages on `main`.
+- [x] Add a mutation-testing run (Stryker) to measure the unit suite, not just cover it.
 - [ ] Add an OTLP exporter option so traces can be viewed in Jaeger locally via Docker Compose.
 
 ## Author

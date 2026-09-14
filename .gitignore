@@ -7,3 +7,5 @@ pacts/
 .env
 .DS_Store
 *.log
+reports/
+.stryker-tmp/

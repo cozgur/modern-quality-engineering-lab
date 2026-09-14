@@ -27,6 +27,16 @@ describe('validateCheckout', () => {
   });
 
   test.each([
+    [
+      'quantity below range',
+      { productId: 'p', quantity: 0 },
+      `quantity must be between 1 and ${MAX_QUANTITY}`,
+    ],
+    [
+      'quantity above range',
+      { productId: 'p', quantity: MAX_QUANTITY + 1 },
+      `quantity must be between 1 and ${MAX_QUANTITY}`,
+    ],
     ['null body', null, 'body must be a JSON object'],
     ['array body', [], 'body must be a JSON object'],
     ['string body', 'productId=1', 'body must be a JSON object'],

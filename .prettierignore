@@ -9,3 +9,5 @@ package-lock.json
 *.yml
 *.yaml
 *.html
+reports/
+.stryker-tmp/

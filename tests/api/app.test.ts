@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { createApp } from '../../src/app.js';
 import { InMemoryOrderRepository } from '../../src/order-repository.js';
 
@@ -79,7 +79,45 @@ describe('HTTP API', () => {
     expect(response.body).toEqual({ error: 'order_not_found' });
   });
 
+  test('GET / serves the demo page from public/', async () => {
+    const response = await request(app).get('/');
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toMatch(/text\/html/);
+    expect(response.text).toContain('Run demo checkout');
+  });
+
+  test('order ids default to a prefixed UUID when no generator is injected', async () => {
+    const response = await request(createApp()).post('/api/checkout').send({ productId: 'quality-lab' });
+    expect(response.status).toBe(201);
+    expect(response.body.orderId).toMatch(
+      /^order-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+  });
+
+  test.each([
+    ['an Error', new Error('database unavailable')],
+    ['a thrown string', 'database unavailable'],
+    ['an object without a type', { code: 'ECONNRESET' }],
+  ])('a repository failing with %s is logged and answered with a JSON 500', async (_label, thrown) => {
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const failing = createApp({
+      orders: {
+        save: async () => {
+          throw thrown;
+        },
+        findById: async () => undefined,
+      },
+    });
+
+    const response = await request(failing).post('/api/checkout').send({ productId: 'quality-lab' });
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: 'internal_error' });
+    expect(errorLog).toHaveBeenCalledWith(thrown);
+    errorLog.mockRestore();
+  });
+
   test('unexpected repository failures surface as a JSON 500, not a crash', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const failing = createApp({
       orders: {
         save: async () => {

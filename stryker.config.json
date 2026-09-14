@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Mutation testing measures whether the unit and API suites would notice a bug, not just whether they execute the code. The command runner re-runs the fast suites from disk per mutant; Stryker's in-process Vitest runner does not switch mutants correctly on Vitest 5 yet.",
+  "testRunner": "command",
+  "mutate": ["src/checkout.ts", "src/order-repository.ts", "src/app.ts", "src/user-client.ts"],
+  "ignorePatterns": ["playwright-report", "test-results", "pacts", "coverage", "reports"],
+  "reporters": ["clear-text", "progress", "html", "json"],
+  "htmlReporter": {
+    "fileName": "reports/mutation/index.html"
+  },
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 80
+  },
+  "coverageAnalysis": "off",
+  "incremental": false,
+  "tempDirName": ".stryker-tmp",
+  "commandRunner": {
+    "command": "npx vitest run --config vitest.stryker.config.ts"
+  },
+  "concurrency": 4
+}

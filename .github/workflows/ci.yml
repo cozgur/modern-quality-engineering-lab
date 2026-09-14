@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -141,13 +142,51 @@ jobs:
         with:
           name: mutation-report
           path: site/mutation/
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Fetch the latest performance summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run=$(gh run list --workflow performance.yml --branch main --status success --limit 1 --json databaseId,number,createdAt --jq '.[0] // empty')
+          if [ -n "$run" ]; then
+            echo "PERF_RUN=$(jq -r .number <<<"$run")" >> "$GITHUB_ENV"
+            echo "PERF_DATE=$(jq -r '.createdAt[:10]' <<<"$run")" >> "$GITHUB_ENV"
+            gh run download "$(jq -r .databaseId <<<"$run")" -n k6-summary -D site/perf || echo "no k6 artifact on that run"
+          fi
+      - name: Fetch the latest AI evaluation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run=$(gh run list --workflow ai-eval.yml --branch main --status success --limit 1 --json databaseId,number,createdAt --jq '.[0] // empty')
+          if [ -n "$run" ]; then
+            echo "AI_RUN=$(jq -r .number <<<"$run")" >> "$GITHUB_ENV"
+            echo "AI_DATE=$(jq -r '.createdAt[:10]' <<<"$run")" >> "$GITHUB_ENV"
+            gh run download "$(jq -r .databaseId <<<"$run")" -n promptfoo-results -D site/ai-eval || echo "no promptfoo artifact on that run"
+          fi
+      - name: Capture an OpenTelemetry trace excerpt
+        run: |
+          mkdir -p site/traces
+          npm run dev:otel > otel.log 2>&1 &
+          server=$!
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:3000/api/health >/dev/null && break; sleep 1; done
+          id=$(curl -s -X POST -H 'content-type: application/json' -d '{"productId":"quality-lab","quantity":2}' http://127.0.0.1:3000/api/checkout | jq -r .orderId)
+          curl -s "http://127.0.0.1:3000/api/orders/$id" >/dev/null
+          sleep 2; kill "$server" || true; sleep 1
+          {
+            echo "# OpenTelemetry spans exported by the lab during CI run #${GITHUB_RUN_NUMBER} (commit ${GITHUB_SHA:0:7})"
+            echo "# Requests: GET /api/health, POST /api/checkout, GET /api/orders/$id"
+            echo
+            grep -v "unsafe-perm" otel.log | head -400
+          } > site/traces/spans.txt
       - name: Assemble the landing page
         env:
           CUSTOM_DOMAIN: ${{ vars.PAGES_CUSTOM_DOMAIN }}
         run: |
-          sed -e "s/{{sha}}/${GITHUB_SHA:0:7}/" \
-              -e "s/{{date}}/$(date -u +%Y-%m-%d)/" \
-              -e "s/{{run}}/#${GITHUB_RUN_NUMBER}/" pages/index.html > site/index.html
+          node pages/assemble.mjs site
           if [ -n "$CUSTOM_DOMAIN" ]; then echo "$CUSTOM_DOMAIN" > site/CNAME; fi
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5

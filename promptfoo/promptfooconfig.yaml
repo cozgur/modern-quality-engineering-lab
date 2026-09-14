@@ -3,10 +3,10 @@ description: Quality Lab - deterministic AI support assistant evaluation
 prompts:
   - file://prompts/support.txt
 
-# Replace this provider with the model/provider you want to evaluate.
-# The example intentionally reads the provider from the environment so no key is committed.
+# The provider reads ANTHROPIC_API_KEY from the environment; no key is committed.
+# Swap the id for any other Promptfoo provider to compare models.
 providers:
-  - id: openai:gpt-5-mini
+  - id: anthropic:messages:claude-opus-5
 
 tests:
   - vars:

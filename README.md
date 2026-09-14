@@ -178,18 +178,19 @@ npm run test:perf:browser    # k6 browser module, rendering check
 ```
 
 Performance runs weekly and on demand in the [`performance`](.github/workflows/performance.yml) workflow,
-never as a per-commit gate. Results on shared CI runners are indicative, not a benchmark.
+never as a per-commit gate. The latest summary is shown on [lab.ozgurcetintas.dev](https://lab.ozgurcetintas.dev/).
+Results on shared CI runners are indicative, not a benchmark.
 
 ### AI evaluation (Promptfoo)
 
 ```bash
-OPENAI_API_KEY=... npm run eval:ai
+ANTHROPIC_API_KEY=... npm run eval:ai
 ```
 
 [`promptfoo/promptfooconfig.yaml`](promptfoo/promptfooconfig.yaml) evaluates a fictional support assistant
 with deterministic checks: valid JSON, required escalation on duplicate charges, and refusal of requests
-for another customer's data. The [`ai-eval`](.github/workflows/ai-eval.yml) workflow runs on demand and
-skips cleanly when no API key is configured.
+for another customer's data, against Claude Opus 5. The [`ai-eval`](.github/workflows/ai-eval.yml) workflow
+runs on demand and skips cleanly when no `ANTHROPIC_API_KEY` secret is configured.
 
 ### Observability (OpenTelemetry)
 
@@ -199,6 +200,8 @@ npm run dev:otel
 
 Node auto-instrumentation exports spans to the console so the demo stays self-contained. The point is
 diagnosability: a browser symptom can be correlated with a backend span instead of re-running the suite.
+When CI publishes the reports it also starts the instrumented server, sends three requests and keeps the
+exported spans at [lab.ozgurcetintas.dev/traces/spans.txt](https://lab.ozgurcetintas.dev/traces/spans.txt).
 
 ### Agentic testing (Playwright Agents, MCP)
 
@@ -214,8 +217,8 @@ The workflow and its guardrails are in [`docs/agentic-testing.md`](docs/agentic-
 ## CI pipeline
 
 Five independent jobs run in parallel on every push and pull request
-([`ci.yml`](.github/workflows/ci.yml)); on `main` the Playwright and mutation reports are then
-published to <https://lab.ozgurcetintas.dev/>:
+([`ci.yml`](.github/workflows/ci.yml)); on `main` a publishing job then collects the evidence of every
+gate, including the latest k6 summary and a fresh OpenTelemetry trace, at <https://lab.ozgurcetintas.dev/>:
 
 | Job | Runs | Artifact |
 |---|---|---|

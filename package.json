@@ -24,7 +24,7 @@
     "type": "git",
     "url": "https://github.com/cozgur/modern-quality-engineering-lab.git"
   },
-  "homepage": "https://github.com/cozgur/modern-quality-engineering-lab#readme",
+  "homepage": "https://lab.ozgurcetintas.dev/",
   "type": "module",
   "engines": {
     "node": ">=22"

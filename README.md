@@ -23,7 +23,7 @@ all wired into a parallel GitHub Actions pipeline.
 
 | Time you have | Where to look |
 |---|---|
-| 1 minute | The layer map below and the green CI badge above. |
+| 1 minute | The layer map below, the green CI badge above, and the live reports at <https://lab.ozgurcetintas.dev/>. |
 | 5 minutes | [`tests/e2e/checkout.spec.ts`](tests/e2e/checkout.spec.ts) (UI claim verified through the API, failure paths via network mocking), [`tests/api/app.test.ts`](tests/api/app.test.ts) (HTTP error handling), [`tests/integration/postgres.test.ts`](tests/integration/postgres.test.ts) (database-enforced invariants). |
 | 15 minutes | [`docs/test-strategy.md`](docs/test-strategy.md) for the placement rules, then the [decision records](docs/adr/README.md) for the trade-offs, especially [ADR-0006](docs/adr/0006-mutation-testing-with-the-command-runner.md) on what mutation testing found that coverage hid. |
 
@@ -214,16 +214,16 @@ The workflow and its guardrails are in [`docs/agentic-testing.md`](docs/agentic-
 ## CI pipeline
 
 Five independent jobs run in parallel on every push and pull request
-([`ci.yml`](.github/workflows/ci.yml)); on `main` the Playwright report is then published to
-[GitHub Pages](https://cozgur.github.io/modern-quality-engineering-lab/):
+([`ci.yml`](.github/workflows/ci.yml)); on `main` the Playwright and mutation reports are then
+published to <https://lab.ozgurcetintas.dev/>:
 
 | Job | Runs | Artifact |
 |---|---|---|
 | Lint, types, unit & API tests | ESLint, Prettier, `tsc`, Vitest with coverage thresholds | `coverage/` |
-| Mutation testing | Stryker over `src/` with an 80% break threshold | mutation HTML report |
+| Mutation testing | Stryker over `src/` with an 80% break threshold | mutation HTML report, published to [lab.ozgurcetintas.dev/mutation](https://lab.ozgurcetintas.dev/mutation/) |
 | Pact consumer + provider | consumer contract, then provider verification | generated pact |
 | Integration | Testcontainers PostgreSQL | |
-| Browser E2E + accessibility | Playwright with `github` annotations, trace on first retry | Playwright HTML report, published to Pages on `main` |
+| Browser E2E + accessibility | Playwright with `github` annotations, trace on first retry | Playwright HTML report, published to [lab.ozgurcetintas.dev/report](https://lab.ozgurcetintas.dev/report/) |
 
 Separate workflows: [`performance`](.github/workflows/performance.yml) (weekly + manual, k6) and
 [`ai-eval`](.github/workflows/ai-eval.yml) (manual, Promptfoo). Dependencies are pinned exactly and

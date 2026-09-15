@@ -19,6 +19,21 @@ test.describe('Accessibility', () => {
     expect(summary, 'axe-core violations').toEqual([]);
   });
 
+  test('keyboard-only checkout keeps focus on the button after activation', async ({ page }) => {
+    await page.goto('/');
+    const button = page.getByRole('button', { name: 'Run demo checkout' });
+
+    await page.keyboard.press('Tab');
+    await expect(button).toBeFocused();
+
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('status')).toContainText('Order confirmed:');
+    // Found by a generated spec: disabling the button while the request was in flight
+    // dropped focus to <body>, stranding keyboard users after every checkout.
+    await expect(button).toBeFocused();
+    await expect(button).toBeEnabled();
+  });
+
   test('checkout status update stays accessible after interaction', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Run demo checkout' }).click();

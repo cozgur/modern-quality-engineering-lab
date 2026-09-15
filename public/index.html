@@ -23,6 +23,9 @@
       const status = document.getElementById('status');
 
       button.addEventListener('click', async () => {
+        // Disabling a focused control drops keyboard focus to <body>; remember it so the
+        // keyboard user lands back on the button once the request settles.
+        const hadFocus = document.activeElement === button;
         button.disabled = true;
         status.textContent = 'Processing…';
         try {
@@ -38,6 +41,7 @@
           status.textContent = 'Checkout failed';
         } finally {
           button.disabled = false;
+          if (hadFocus) button.focus();
         }
       });
     </script>

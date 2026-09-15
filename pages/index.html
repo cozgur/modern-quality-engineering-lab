@@ -22,7 +22,17 @@
       main { max-width: 880px; margin: 0 auto; padding: 56px 32px 80px; display: flex; flex-direction: column; gap: 48px; }
       .kicker { font: 500 11px/16px 'JetBrains Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 16px; }
       h1 { margin: 0; font: 600 34px/1.15 'Schibsted Grotesk', sans-serif; letter-spacing: -0.015em; max-width: 24ch; }
-      .lede { margin: 20px 0 0; max-width: 62ch; }
+      .byline { margin: 18px 0 0; max-width: 66ch; font-size: 16px; line-height: 26px; }
+      .lede { margin: 14px 0 0; max-width: 66ch; color: var(--muted); }
+      .metrics { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 14px; line-height: 22px; }
+      .metrics th, .metrics td { text-align: left; vertical-align: top; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--rule); }
+      .metrics thead th { font: 500 11px/16px 'JetBrains Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--ink); }
+      .metrics tbody th { font-weight: 600; white-space: nowrap; width: 180px; }
+      .metrics td.v { font: 500 14px/22px 'JetBrains Mono', monospace; white-space: nowrap; }
+      .metrics td.n { color: var(--muted); font-size: 13px; }
+      .metrics .ok { color: var(--green); }
+      .metrics .bad { color: var(--red); }
+      @media (max-width: 720px) { .metrics thead { display: none; } .metrics tr { display: grid; grid-template-columns: 1fr; padding: 10px 0; border-bottom: 1px solid var(--rule); } .metrics th, .metrics td { border: 0; padding: 0; } .metrics tbody th { width: auto; } .metrics td.v { white-space: normal; } }
       .label { font: 500 11px/16px 'JetBrains Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding-bottom: 8px; border-bottom: 1px solid var(--ink); }
       .rows { list-style: none; margin: 0; padding: 0; }
       .rows li { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 24px; align-items: baseline; padding: 20px 0; border-bottom: 1px solid var(--rule); }
@@ -47,21 +57,35 @@
       <section>
         <p class="kicker">Published by CI · commit {{sha}} · {{date}}</p>
         <h1>The evidence, not the claim.</h1>
-        <p class="lede">
-          Every push to <code>main</code> runs the lab's quality gates and publishes their evidence here. The
-          repository README explains which layer each risk is tested at; these pages show what the last run
-          actually saw.
+        <p class="byline">
+          Built by <a href="https://ozgurcetintas.dev/">Özgür Çetintaş</a>, Senior Test Automation Engineer / SDET.
+          A production-style demonstration of how I design quality systems: choosing the cheapest reliable test
+          layer for each risk and publishing the evidence through CI.
         </p>
-        <p style="margin-top:20px"><span class="stamp">run {{run}}</span></p>
+        <p class="lede">
+          Every push to <code>main</code> runs the gates below and republishes this page. Each layer exists
+          because it is the cheapest reliable place to prove a specific risk, not because the tool belongs in
+          the stack; the <a href="https://github.com/cozgur/modern-quality-engineering-lab/blob/main/docs/test-strategy.md">test strategy</a>
+          and the decision records explain each placement.
+        </p>
       </section>
       <section>
-        <div class="label">Quality gates · what the last run proved</div>
+        <div class="label">Quality signals · run {{run}}</div>
+        <table class="metrics">
+          <thead><tr><th scope="col">Signal</th><th scope="col">Current evidence</th><th scope="col">Context</th></tr></thead>
+          <tbody>
+            {{metrics}}
+          </tbody>
+        </table>
+      </section>
+      <section>
+        <div class="label">Core gates · the risk-to-layer decisions</div>
         <ol class="rows">
           <li>
             <span class="idx">01</span>
             <div>
               <h2>Unit and API tests</h2>
-              <p>Table-driven validation boundaries and in-process HTTP semantics (400 vs 500, malformed JSON, failing repository). Coverage thresholds enforced.</p>
+              <p>Pure validation logic at every boundary, then in-process HTTP semantics: 400 versus 500, malformed JSON, a failing repository. No browser, milliseconds.</p>
             </div>
             <a class="go" href="https://github.com/cozgur/modern-quality-engineering-lab/actions/workflows/ci.yml">CI job ↗</a>
           </li>
@@ -69,7 +93,7 @@
             <span class="idx">02</span>
             <div>
               <h2>Mutation testing</h2>
-              <p>Stryker injects faults into <code>src/</code> and counts how many the suites catch. CI fails under 80%. Surviving mutants are highlighted in source.</p>
+              <p>Do those suites notice a bug, or merely execute the code? Stryker injects faults into <code>src/</code>; surviving mutants are highlighted in source and CI fails under 80%.</p>
             </div>
             <a class="go" href="mutation/">Report ↗</a>
           </li>
@@ -77,7 +101,7 @@
             <span class="idx">03</span>
             <div>
               <h2>Contract tests</h2>
-              <p>The UI client's Pact is generated by the consumer test and replayed against the real Express app in the same job; the pact file is uploaded as an artifact.</p>
+              <p>Consumer and provider can change independently: the UI client's Pact is generated by the consumer test and replayed against the real Express app in the same job.</p>
             </div>
             <a class="go" href="https://github.com/cozgur/modern-quality-engineering-lab/actions/workflows/ci.yml">CI job ↗</a>
           </li>
@@ -85,7 +109,7 @@
             <span class="idx">04</span>
             <div>
               <h2>Integration with PostgreSQL</h2>
-              <p>A disposable <code>postgres:16</code> container proves the CHECK and primary-key constraints and the full HTTP-to-database path.</p>
+              <p>Real database semantics only where they matter: a disposable <code>postgres:16</code> proves the CHECK and primary-key constraints and the full HTTP-to-database path.</p>
             </div>
             <a class="go" href="https://github.com/cozgur/modern-quality-engineering-lab/actions/workflows/ci.yml">CI job ↗</a>
           </li>
@@ -93,15 +117,20 @@
             <span class="idx">05</span>
             <div>
               <h2>Browser E2E and accessibility</h2>
-              <p>The checkout journey verified through the API, two mocked failure paths, and axe-core WCAG scans before and after interaction.</p>
+              <p>Only the critical journey, verified through the API rather than by trusting the text, two failure paths mocked at the network layer, and axe-core WCAG scans before and after interaction.</p>
             </div>
             <a class="go" href="report/">Report ↗</a>
           </li>
+        </ol>
+      </section>
+      <section>
+        <div class="label">Supporting evidence · breadth, on their own cadence</div>
+        <ol class="rows" start="6">
           <li>
             <span class="idx">06</span>
             <div>
               <h2>Performance</h2>
-              <p>k6 protocol test against the lab booted inside the runner, gated on p95 and error-rate thresholds.</p>
+              <p>k6 protocol test against the lab booted inside the runner, gated on p95 and error-rate thresholds. Weekly and on demand, never a per-commit gate.</p>
               <p class="meta">{{k6_summary}}</p>
             </div>
             <a class="go" href="perf/k6-summary.json">Summary ↗</a>
@@ -110,7 +139,7 @@
             <span class="idx">07</span>
             <div>
               <h2>Observability</h2>
-              <p>The instrumented server is started during publishing, three requests are sent, and the exported spans are kept as evidence.</p>
+              <p>The instrumented server is started during publishing, three requests are sent, and the exported OpenTelemetry spans are kept as evidence.</p>
               <p class="meta">{{otel_summary}}</p>
             </div>
             <a class="go" href="traces/spans.txt">Spans ↗</a>
@@ -119,7 +148,7 @@
             <span class="idx">08</span>
             <div>
               <h2>AI evaluation</h2>
-              <p>Promptfoo checks a fictional support assistant for valid JSON, mandatory escalation and refusal of data requests. Runs on demand with an Anthropic or OpenAI key; the assertions are provider-agnostic.</p>
+              <p>Promptfoo checks a fictional support assistant for valid JSON, mandatory escalation and refusal of data requests. On demand with an Anthropic or OpenAI key; the assertions are provider-agnostic.</p>
               <p class="meta">{{ai_summary}}</p>
             </div>
             <a class="go" href="https://github.com/cozgur/modern-quality-engineering-lab/actions/workflows/ai-eval.yml">Runs ↗</a>

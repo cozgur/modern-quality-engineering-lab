@@ -8,7 +8,7 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/**'],
       exclude: ['src/server.ts', 'src/instrumentation.ts', 'src/postgres-order-repository.ts'],
-      reporter: ['text', 'lcov'],
+      reporter: ['text', 'lcov', 'json-summary'],
       thresholds: { lines: 90, statements: 90, functions: 90, branches: 85 },
     },
   },

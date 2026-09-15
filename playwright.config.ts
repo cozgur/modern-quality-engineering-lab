@@ -9,7 +9,12 @@ export default defineConfig({
   retries: isCI ? 2 : 0,
   workers: isCI ? 1 : undefined,
   reporter: isCI
-    ? [['list'], ['github'], ['html', { open: 'never' }]]
+    ? [
+        ['list'],
+        ['github'],
+        ['html', { open: 'never' }],
+        ['json', { outputFile: 'playwright-report/results.json' }],
+      ]
     : [['list'], ['html', { open: 'never' }]],
   expect: { timeout: 5_000 },
   use: {

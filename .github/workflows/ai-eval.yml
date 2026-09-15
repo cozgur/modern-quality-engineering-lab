@@ -2,7 +2,7 @@ name: ai-eval
 
 # Promptfoo evaluation of the fictional support assistant.
 # Runs on demand only: it needs a model API key and spends tokens.
-# Add ANTHROPIC_API_KEY as a repository secret to enable it.
+# Add ANTHROPIC_API_KEY or OPENAI_API_KEY as a repository secret to enable it.
 on:
   workflow_dispatch:
 
@@ -16,20 +16,27 @@ jobs:
     timeout-minutes: 10
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
-      - name: Skip when no API key is configured
-        if: env.ANTHROPIC_API_KEY == ''
-        run: echo "ANTHROPIC_API_KEY secret not set; skipping evaluation." >> "$GITHUB_STEP_SUMMARY"
+      - name: Pick a provider from the available key
+        id: provider
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then echo "id=anthropic:messages:claude-opus-5" >> "$GITHUB_OUTPUT";
+          elif [ -n "$OPENAI_API_KEY" ]; then echo "id=openai:gpt-5-mini" >> "$GITHUB_OUTPUT";
+          else echo "No ANTHROPIC_API_KEY or OPENAI_API_KEY secret set; skipping evaluation." >> "$GITHUB_STEP_SUMMARY"; fi
       - name: Run evaluation
-        if: env.ANTHROPIC_API_KEY != ''
-        run: npx --yes promptfoo@0.123.0 eval -c promptfoo/promptfooconfig.yaml --output promptfoo-results.json
+        if: steps.provider.outputs.id != ''
+        run: |
+          npx --yes promptfoo@0.123.0 eval -c promptfoo/promptfooconfig.yaml \
+            --providers "${{ steps.provider.outputs.id }}" --output promptfoo-results.json
+          echo "Evaluated with \`${{ steps.provider.outputs.id }}\`" >> "$GITHUB_STEP_SUMMARY"
       - name: Upload results
-        if: always() && env.ANTHROPIC_API_KEY != ''
+        if: always() && steps.provider.outputs.id != ''
         uses: actions/upload-artifact@v7
         with:
           name: promptfoo-results

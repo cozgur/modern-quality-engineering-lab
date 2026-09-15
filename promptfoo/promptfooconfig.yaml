@@ -3,8 +3,9 @@ description: Quality Lab - deterministic AI support assistant evaluation
 prompts:
   - file://prompts/support.txt
 
-# The provider reads ANTHROPIC_API_KEY from the environment; no key is committed.
-# Swap the id for any other Promptfoo provider to compare models.
+# Default provider; the ai-eval workflow overrides it with --providers depending on which
+# key is available (ANTHROPIC_API_KEY -> Claude Opus 5, OPENAI_API_KEY -> gpt-5-mini).
+# The prompt and the assertions are provider-agnostic on purpose. No key is committed.
 providers:
   - id: anthropic:messages:claude-opus-5
 

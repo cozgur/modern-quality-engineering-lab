@@ -22,11 +22,13 @@ function performance() {
 function aiEvaluation() {
   const file = `${outDir}/ai-eval/promptfoo-results.json`;
   if (!existsSync(file))
-    return 'Not run yet: add an ANTHROPIC_API_KEY repository secret and dispatch the ai-eval workflow.';
+    return 'Not run yet: add an ANTHROPIC_API_KEY or OPENAI_API_KEY repository secret and dispatch the ai-eval workflow.';
   const data = JSON.parse(readFileSync(file, 'utf8'));
   const stats = data.results?.stats ?? data.stats ?? {};
+  const provider =
+    data.results?.prompts?.[0]?.provider ?? data.config?.providers?.[0]?.id ?? data.config?.providers?.[0];
   const when = env.AI_RUN ? ` · run #${env.AI_RUN} on ${env.AI_DATE}` : '';
-  return `${stats.successes ?? '?'} assertions passed · ${stats.failures ?? '?'} failed${when}`;
+  return `${stats.successes ?? '?'} assertions passed · ${stats.failures ?? '?'} failed${provider ? ` · ${provider}` : ''}${when}`;
 }
 
 function observability() {

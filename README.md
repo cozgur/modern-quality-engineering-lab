@@ -185,12 +185,15 @@ Results on shared CI runners are indicative, not a benchmark.
 
 ```bash
 ANTHROPIC_API_KEY=... npm run eval:ai
+# or any other Promptfoo provider, e.g. with an OpenAI key:
+OPENAI_API_KEY=... npx promptfoo@0.123.0 eval -c promptfoo/promptfooconfig.yaml --providers openai:gpt-5-mini
 ```
 
 [`promptfoo/promptfooconfig.yaml`](promptfoo/promptfooconfig.yaml) evaluates a fictional support assistant
 with deterministic checks: valid JSON, required escalation on duplicate charges, and refusal of requests
-for another customer's data, against Claude Opus 5. The [`ai-eval`](.github/workflows/ai-eval.yml) workflow
-runs on demand and skips cleanly when no `ANTHROPIC_API_KEY` secret is configured.
+for another customer's data. The prompt and assertions are provider-agnostic: the
+[`ai-eval`](.github/workflows/ai-eval.yml) workflow evaluates Claude Opus 5 when an `ANTHROPIC_API_KEY`
+secret exists, falls back to `gpt-5-mini` with an `OPENAI_API_KEY`, and skips cleanly with neither.
 
 ### Observability (OpenTelemetry)
 

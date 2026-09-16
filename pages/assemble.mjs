@@ -60,6 +60,14 @@ function promptfoo() {
   return { passed: stats.successes ?? 0, failed: stats.failures ?? 0, provider };
 }
 
+function countFiles() {
+  const dir = `${evidenceDir}/counts`;
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((name) => name.endsWith('.json'))
+    .map((name) => readJson(`${dir}/${name}`));
+}
+
 /** Number of jobs in the CI workflow, so the count cannot drift from the pipeline. */
 function countCiJobs() {
   const file = '.github/workflows/ci.yml';
@@ -159,10 +167,13 @@ writeFileSync(`${siteDir}/index.html`, html);
 // Anything that quotes these numbers elsewhere (the portfolio) reads them from here
 // rather than repeating a figure written by hand.
 const vitest = readJson(`${evidenceDir}/coverage/vitest.json`);
+// Contract and integration suites run in their own jobs, so their counts arrive as
+// separate artifacts; the total is the sum of what actually ran, never a guess.
+const belowBrowser = [vitest, ...countFiles()].reduce((sum, report) => sum + (report?.numTotalTests ?? 0), 0);
 const facts = {
   name: 'Modern Quality Engineering Lab',
   ciJobs: countCiJobs(),
-  unitTests: vitest?.numTotalTests ?? null,
+  unitTests: belowBrowser || null,
   e2eTests: pwStats ? pwStats.expected + pwStats.unexpected : null,
   mutationScore: mut ? Number(mut.score.toFixed(1)) : null,
   coverageLines: cov?.lines?.pct ?? null,

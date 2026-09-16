@@ -54,15 +54,22 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Consumer contract
-        run: npm run test:contract:consumer
+        run: npx vitest run tests/contract/user.consumer.pact.test.ts --reporter=default --reporter=json --outputFile=counts/contract-consumer.json
       - name: Provider verification
-        run: npm run test:contract:provider
+        run: npx vitest run tests/contract/user.provider.pact.test.ts --reporter=default --reporter=json --outputFile=counts/contract-provider.json
       - name: Upload generated pact
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: pacts
           path: pacts/
+          if-no-files-found: ignore
+      - name: Upload test counts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: counts-contract
+          path: counts/
           if-no-files-found: ignore
 
   integration:
@@ -76,7 +83,14 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm run test:integration
+      - run: npx vitest run tests/integration --reporter=default --reporter=json --outputFile=counts/integration.json
+      - name: Upload test counts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: counts-integration
+          path: counts/
+          if-no-files-found: ignore
 
   e2e:
     name: Browser E2E + accessibility
@@ -146,6 +160,14 @@ jobs:
         with:
           name: coverage
           path: evidence/coverage/
+      - uses: actions/download-artifact@v8
+        with:
+          name: counts-contract
+          path: evidence/counts/
+      - uses: actions/download-artifact@v8
+        with:
+          name: counts-integration
+          path: evidence/counts/
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc

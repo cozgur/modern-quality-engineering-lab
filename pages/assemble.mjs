@@ -1,7 +1,7 @@
 // Assembles the Pages landing page from pages/index.html and the evidence CI collected.
 // Every number comes from a real artifact of this run or of the latest run of a sibling
 // workflow; when something is missing the page says so instead of inventing a value.
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const siteDir = process.argv[2] ?? 'site';
 const evidenceDir = process.argv[3] ?? 'evidence';
@@ -58,6 +58,21 @@ function promptfoo() {
   const provider =
     data.results?.prompts?.[0]?.provider ?? data.config?.providers?.[0]?.id ?? data.config?.providers?.[0];
   return { passed: stats.successes ?? 0, failed: stats.failures ?? 0, provider };
+}
+
+/** Number of jobs in the CI workflow, so the count cannot drift from the pipeline. */
+function countCiJobs() {
+  const file = '.github/workflows/ci.yml';
+  if (!existsSync(file)) return null;
+  const lines = readFileSync(file, 'utf8').split('\n');
+  const start = lines.findIndex((line) => line === 'jobs:');
+  if (start === -1) return null;
+  let count = 0;
+  for (const line of lines.slice(start + 1)) {
+    if (/^\S/.test(line)) break;
+    if (/^ {2}[a-z][a-z0-9-]*:\s*$/.test(line)) count += 1;
+  }
+  return count || null;
 }
 
 function spans() {
@@ -140,4 +155,23 @@ const html = template
   .replaceAll('{{otel_summary}}', otelSummary);
 
 writeFileSync(`${siteDir}/index.html`, html);
-console.log('assembled', `${siteDir}/index.html`);
+
+// Anything that quotes these numbers elsewhere (the portfolio) reads them from here
+// rather than repeating a figure written by hand.
+const vitest = readJson(`${evidenceDir}/coverage/vitest.json`);
+const facts = {
+  name: 'Modern Quality Engineering Lab',
+  ciJobs: countCiJobs(),
+  unitTests: vitest?.numTotalTests ?? null,
+  e2eTests: pwStats ? pwStats.expected + pwStats.unexpected : null,
+  mutationScore: mut ? Number(mut.score.toFixed(1)) : null,
+  coverageLines: cov?.lines?.pct ?? null,
+  adrs: existsSync('docs/adr') ? readdirSync('docs/adr').filter((n) => /^\d{4}-.*\.md$/.test(n)).length : 0,
+  performance: perf
+    ? { p95Ms: Number(perf.p95.toFixed(2)), errorRate: perf.failedRate, requests: perf.requests }
+    : null,
+  aiEval: ai ? { passed: ai.passed, failed: ai.failed, provider: ai.provider ?? null } : null,
+  generatedAt: new Date().toISOString(),
+};
+writeFileSync(`${siteDir}/facts.json`, JSON.stringify(facts, null, 2) + '\n');
+console.log('assembled', `${siteDir}/index.html`, '+ facts.json');
